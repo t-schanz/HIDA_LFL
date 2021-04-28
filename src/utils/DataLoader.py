@@ -26,17 +26,17 @@ class DataSet(Dataset):
             raise KeyError
 
         image = self.load_file(image_dict["image"])
-        image_2 = self.load_file(image_dict["ClusterShade"])
-        image_3 = self.load_file(image_dict["DA"])
+        # image_2 = self.load_file(image_dict["ClusterShade"])
+        # image_3 = self.load_file(image_dict["DA"])
 
         if self.transform:
             image = self.transform(image)
-            image_2 = self.transform(image_2)
-            image_3 = self.transform(image_3)
+        #     image_2 = self.transform(image_2)
+        #     image_3 = self.transform(image_3)
 
-        train_tensor = torch.stack([image, image_2, image_3])[:, 0, :, :]
+        # train_tensor = torch.stack([image, image_2, image_3])[:, 0, :, :]
 
-        return train_tensor, label, label_name
+        return image, label, label_name
 
     def load_file(self, file):
         this_image = Image.open(file)

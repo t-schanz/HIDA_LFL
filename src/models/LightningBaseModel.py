@@ -17,14 +17,21 @@ class LightningModel(pl.LightningModule):
 
         super().__init__()
         self.class_labels = class_labels
-        self.model = self.define_model()
+        self.model = self.define_model(input_channels=1)
         self.learning_rate = kwargs["learning_rate"]
         self.loss_func = nn.BCELoss()
         self.accuracy_func = pl_metrics.Accuracy()
         self.save_hyperparameters()
 
-    def define_model(self):
-        return resnet18(pretrained=False, num_classes=1)
+    def define_model(self, input_channels=1):
+
+        feature_extractor = resnet18(pretrained=True, num_classes=1000)
+        feature_extractor.conv1 = nn.Conv2d(input_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        classifier = nn.Linear(1000, 1)
+
+        model = nn.Sequential(feature_extractor, classifier)
+
+        return model
 
     def forward(self, images,  *args, **kwargs):
         predictions = self.model(images)
