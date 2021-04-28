@@ -18,6 +18,11 @@ def load_config():
     parser.add_argument('--tensorboard_logger_logdir', type=str, default="logs/tb_logs")
     parser.add_argument('--experiment_name', type=str, default="HIDA")
     parser.add_argument('--checkpoint_file_path', type=str, default="logs/checkpoints")
+    parser.add_argument('--data_path', type=str, default="data/")
+    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--learning_rate', type=float, default=0.002)
+
+    parser = pl.Trainer.add_argparse_args(parser)
 
     args = parser.parse_args()
     return args
@@ -29,17 +34,17 @@ def main():
     torch.manual_seed(args.seed)
     pl.seed_everything(args.seed)
 
-    if args.debug_mode:
+    if args.fast_dev_run:
         logging.basicConfig(level=logging.DEBUG, format='%(name)s %(funcName)s %(levelname)s %(message)s')
     else:
         logging.basicConfig(level=logging.WARNING, format='%(name)s %(funcName)s %(levelname)s %(message)s')
 
-    if args.debug_mode:
+    if args.fast_dev_run:
         torch.autograd.set_detect_anomaly(True)
 
     transform = None
 
-    data_module = DataLoader.from_argparse_args(args, transform=transform)
+    data_module = DataLoader.from_argparse_args(args, transform=transform, **args.__dict__)
     data_module.setup()
 
     # if the model is trained on GPU add a GPU logger to see GPU utilization in comet-ml logs:
