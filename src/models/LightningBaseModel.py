@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 import pytorch_lightning.metrics as pl_metrics
 import torch
 import torch.nn as nn
-from torchvision.models import resnet18, resnet50
+from torchvision.models import resnet18, resnet50, resnet101
 
 
 class LightningModel(pl.LightningModule):
@@ -18,11 +18,11 @@ class LightningModel(pl.LightningModule):
         self.learning_rate = kwargs["learning_rate"]
         self.loss_func = nn.BCEWithLogitsLoss()
         self.accuracy_func = pl_metrics.Accuracy()
-        self.example_input_array = example_input_array
         self.save_hyperparameters()
+        self.example_input_array = example_input_array
 
     def define_model(self, input_channels=1):
-        feature_extractor = resnet18(pretrained=True, num_classes=1000)
+        feature_extractor = resnet18(pretrained=False, num_classes=1000)
         feature_extractor.conv1 = nn.Conv2d(input_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
         classifier = nn.Linear(1000, 1)
 
