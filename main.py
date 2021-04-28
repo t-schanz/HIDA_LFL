@@ -8,7 +8,7 @@ from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import ModelCheckpoint
 from torchvision import transforms
 
-from src.models.LightningBaseModel import LightningModel
+from src.models.LightningVisionTransformerModel import VisionTransformerModel
 from src.utils.DataLoader import HidaDataLoader
 
 
@@ -74,8 +74,10 @@ def main():
                                           dirpath=os.path.join(args.checkpoint_file_path, args.experiment_name),
                                           )
 
-    model = LightningModel(class_labels=data_module.unique_labels, **args.__dict__)
+    model = VisionTransformerModel(class_labels=data_module.unique_labels, **args.__dict__)
 
+    
+    
     trainer = pl.Trainer.from_argparse_args(args,
                                             callbacks=callbacks,
                                             logger=[test_tube_logger],
