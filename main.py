@@ -9,7 +9,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from torchvision import transforms
 
 from src.models.LightningBaseModel import LightningModel
-from src.utils.DataLoader import DataLoader
+from src.utils.DataLoader import HidaDataLoader
 
 
 def load_config():
@@ -42,9 +42,11 @@ def main():
     if args.fast_dev_run:
         torch.autograd.set_detect_anomaly(True)
 
-    transform = None
+    transform = transforms.Compose([
+        transforms.ToTensor()
+    ])
 
-    data_module = DataLoader.from_argparse_args(args, transform=transform, **args.__dict__)
+    data_module = HidaDataLoader.from_argparse_args(args, transform=transform, **args.__dict__)
     data_module.setup()
 
     # if the model is trained on GPU add a GPU logger to see GPU utilization in comet-ml logs:

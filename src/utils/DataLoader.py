@@ -7,24 +7,36 @@ import pytorch_lightning as pl
 import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
+import numpy as np
 
 
 class DataSet(Dataset):
-    def __init__(self, files, integer_labels, transform=None):
+    def __init__(self, files, transform=None):
         self.files = files
-        self.integer_labels = integer_labels
         self.transform = transform
 
     def __getitem__(self, item):
         image_dict, label_name = self.files[item]
-        image = self.load_file(image_dict["normalizedImg"])
+
+        if label_name == "MILD":
+            label = 0
+        elif label_name == "SEVERE":
+            label = 1
+        else:
+            raise KeyError
+
+        image = self.load_file(image_dict["image"])
+        image_2 = self.load_file(image_dict["ClusterShade"])
+        image_3 = self.load_file(image_dict["DA"])
 
         if self.transform:
             image = self.transform(image)
+            image_2 = self.transform(image_2)
+            image_3 = self.transform(image_3)
 
-        label = torch.Tensor([self.integer_labels[label_name]])
+        train_tensor = torch.stack([image, image_2, image_3])[:, 0, :, :]
 
-        return image, label, label_name
+        return train_tensor, label, label_name
 
     def load_file(self, file):
         this_image = Image.open(file)
@@ -34,8 +46,8 @@ class DataSet(Dataset):
         return len(self.files)
 
 
-class DataLoader(pl.LightningDataModule):
-    def __init__(self, transform=None, **kwargs):
+class HidaDataLoader(pl.LightningDataModule):
+    def __init__(self, batch_size, data_path, transform=None, **kwargs):
         super().__init__()
 
         self.transform = transform
@@ -48,14 +60,14 @@ class DataLoader(pl.LightningDataModule):
         self.unique_labels = []
         self.integer_class_labels = dict()
 
-        self.batch_size = kwargs["batch_size"]
-        self.num_workers = 20
+        self.batch_size = batch_size
+        self.num_workers = 0
         self.train_split = 0.9
         self.validation_split = 0.1
         self.shuffle_train_dataset = True
         self.shuffle_validation_dataset = False
         self.shuffle_test_dataset = False
-        self.data_path = kwargs["data_path"]
+        self.data_path = data_path
 
     def setup(self, stage=None):
         training_pairs = self.prepare_data_setup(train=True)
@@ -79,16 +91,13 @@ class DataLoader(pl.LightningDataModule):
         test_subset = testing_images
 
         if stage == 'fit' or stage is None:
-            self.train_data = DataSet(train_subset, transform=self.transform,
-                                              integer_labels=self.integer_class_labels)
+            self.train_data = DataSet(train_subset, transform=self.transform)
             logging.debug(f"Number of training samples: {len(self.train_data)}")
-            self.valid_data = DataSet(valid_subset, transform=self.transform,
-                                              integer_labels=self.integer_class_labels)
+            self.valid_data = DataSet(valid_subset, transform=self.transform)
             logging.debug(f"Number of validation samples: {len(self.valid_data)}")
 
         if stage == 'test' or stage is None:
-            self.test_data = DataSet(test_subset, transform=self.transform,
-                                             integer_labels=self.integer_class_labels)
+            self.test_data = DataSet(test_subset, transform=self.transform)
 
     def prepare_data_setup(self, train=True):
         pairs = []
@@ -101,15 +110,19 @@ class DataLoader(pl.LightningDataModule):
 
         truth_df = truth_df.set_index("ImageFile")
 
-        for i in range(len(glob.glob(os.path.join(_data_path, "normalizedImg/*.png")))):
+        image_names = truth_df.index.to_list()
+
+        for image_name in image_names:
+            if str(image_name) == "nan":
+                continue
             image_dict = {}
-            raw_image_name = f"normalizedImg/P_1_{i+1}.png"
+            raw_image_name = f"normalizedImg/{image_name}"
             image_dict["image"] = os.path.join(_data_path, raw_image_name)
             for folder in glob.glob(os.path.join(_data_path, "Radiomics/*")):
-                raw_image_name = f"P_1_{i+1}.png"
-                image_dict[folder] = os.path.join(_data_path, "Radiomics", folder, raw_image_name)
+                indicator = os.path.split(folder)[-1]
+                image_dict[indicator] = os.path.join(folder, image_name)
 
-            target = truth_df[truth_df.index == f"P_{i+1}.png"]["Prognosis"]
+            target = truth_df[truth_df.index == image_name]["Prognosis"].iloc[0]
             pairs.append((image_dict, target))
         return pairs
 

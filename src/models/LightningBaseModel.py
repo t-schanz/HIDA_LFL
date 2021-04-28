@@ -43,7 +43,7 @@ class LightningModel(pl.LightningModule):
         logging.debug(f"predictions have the shape: {predictions.shape}")
 
 
-        loss = self.loss_func(predictions, labels.view(-1).long())
+        loss = self.loss_func(predictions, labels)
         accuracy = self.accuracy_func(F.softmax(predictions, dim=1).detach().cpu(), labels.to(torch.int).detach().cpu())
 
         # lets log some values for inspection (for example in tensorboard):
@@ -58,7 +58,7 @@ class LightningModel(pl.LightningModule):
         # for the toy example we will not use the meta_data and only the images to make a prediction.
         predictions = self(images)
 
-        loss = self.loss_func(predictions, labels.view(-1).long())
+        loss = self.loss_func(predictions, labels)
         accuracy = self.accuracy_func(F.softmax(predictions, dim=1).detach().cpu(), labels.to(torch.int).detach().cpu())
 
         # lets log some values for inspection (for example in tensorboard):
@@ -77,7 +77,7 @@ class LightningModel(pl.LightningModule):
         # for the toy example we will not use the meta_data and only the images to make a prediction.
         predictions = self(images)
 
-        loss = self.loss_func(predictions, labels.view(-1).long())
+        loss = self.loss_func(predictions, labels)
         accuracy = self.accuracy_func(F.softmax(predictions, dim=1).detach().cpu(), labels.to(torch.int).detach().cpu())
 
         # lets log some values for inspection (for example in tensorboard):
