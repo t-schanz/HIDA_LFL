@@ -21,4 +21,4 @@
 
 module load compilers/cuda/11.0
 nvidia-smi
-srun /gpfs/home/machnitz/miniconda3/envs/pytorch/bin/python main.py --gpus 1 --num_workers 20 --max_epochs 100 --data_path "/gpfs/work/machnitz/HIDA/HIDA-COVID/HackathonCovidData"
+srun /gpfs/home/machnitz/miniconda3/envs/pytorch/bin/python main.py --gpus 1 --num_workers 20 --max_epochs 100 --data_path "/gpfs/work/machnitz/HIDA/HIDA-COVID/HackathonCovidData" --learning_rate 0.0002

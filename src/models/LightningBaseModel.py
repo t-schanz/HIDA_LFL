@@ -17,14 +17,13 @@ class LightningModel(pl.LightningModule):
 
         super().__init__()
         self.class_labels = class_labels
-        self.model = self.define_model(input_channels=3)
+        self.model = self.define_model(input_channels=10)
         self.learning_rate = kwargs["learning_rate"]
         self.loss_func = nn.BCEWithLogitsLoss()
         self.accuracy_func = pl_metrics.Accuracy()
         self.save_hyperparameters()
 
     def define_model(self, input_channels=1):
-
         feature_extractor = resnet18(pretrained=True, num_classes=1000)
         feature_extractor.conv1 = nn.Conv2d(input_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
         classifier = nn.Linear(1000, 1)
@@ -48,7 +47,6 @@ class LightningModel(pl.LightningModule):
         predictions = self(images)
         logging.debug(f"labels have the shape: {labels.shape}")
         logging.debug(f"predictions have the shape: {predictions.shape}")
-
 
         loss = self.loss_func(predictions, labels.unsqueeze(-1).float())
         accuracy = self.accuracy_func(F.softmax(predictions, dim=1).detach().cpu(), labels.to(torch.int).detach().cpu())

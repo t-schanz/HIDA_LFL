@@ -24,7 +24,7 @@ class DataSet(Dataset):
         else:
             raise KeyError
 
-        image_subsets = ["image", "ClusterShade", "DA"]
+        image_subsets = ["image", "ClusterShade", "DA", "DE", "Energy", "Entropy", "ID", "Kurtosis", "Mean", "Variance"]
         images = []
         for element in image_subsets:
             images.append(self.load_file(image_dict[element]))
