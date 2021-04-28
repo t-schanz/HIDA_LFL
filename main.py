@@ -46,8 +46,8 @@ def main():
         torch.autograd.set_detect_anomaly(True)
 
     transform = transforms.Compose([
-        transforms.RandomRotation(degrees=15),
         transforms.RandomCrop(size=[900, 900]),
+        transforms.RandomRotation(degrees=15),
         transforms.ToTensor()
     ])
 
