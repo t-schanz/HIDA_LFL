@@ -36,7 +36,9 @@ class DataSet(Dataset):
 
         train_tensor = torch.stack(images)[:, 0, :, :]
 
-        return train_tensor, label, label_name
+        image_name = os.path.split(image_dict[key])[-1]
+
+        return train_tensor, label, (label_name, image_name)
 
     def load_file(self, file):
         this_image = Image.open(file)
