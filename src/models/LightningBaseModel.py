@@ -17,7 +17,7 @@ class LightningModel(pl.LightningModule):
 
         super().__init__()
         self.class_labels = class_labels
-        self.model = self.define_model(input_channels=1)
+        self.model = self.define_model(input_channels=3)
         self.learning_rate = kwargs["learning_rate"]
         self.loss_func = nn.BCELoss()
         self.accuracy_func = pl_metrics.Accuracy()

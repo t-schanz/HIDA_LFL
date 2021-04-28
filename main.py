@@ -14,11 +14,13 @@ from src.utils.DataLoader import HidaDataLoader
 
 def load_config():
     parser = ArgumentParser()
-    parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--tensorboard_logger_logdir', type=str, default="logs/tb_logs")
-    parser.add_argument('--experiment_name', type=str, default="HIDA")
-    parser.add_argument('--checkpoint_file_path', type=str, default="logs/checkpoints")
-    parser.add_argument('--data_path', type=str, default="data/")
+    parser.add_argument('--seed', type=int, default=42, help="The random seed for the experiment.")
+    parser.add_argument('--tensorboard_logger_logdir', type=str, default="logs/tb_logs",
+                        help="The path where to log the data.")
+    parser.add_argument('--experiment_name', type=str, default="HIDA", help="The name of the experiment.")
+    parser.add_argument('--checkpoint_file_path', type=str, default="logs/checkpoints",
+                        help="The path where to store the checkpoints.")
+    parser.add_argument('--data_path', type=str, default="data/", help="The path where the data is stored at.")
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--learning_rate', type=float, default=0.002)
 

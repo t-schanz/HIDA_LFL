@@ -7,7 +7,6 @@ import pytorch_lightning as pl
 import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
-import numpy as np
 
 
 class DataSet(Dataset):
@@ -25,18 +24,18 @@ class DataSet(Dataset):
         else:
             raise KeyError
 
-        image = self.load_file(image_dict["image"])
-        # image_2 = self.load_file(image_dict["ClusterShade"])
-        # image_3 = self.load_file(image_dict["DA"])
+        image_subsets = ["image", "ClusterShade", "DA"]
+        images = []
+        for element in image_subsets:
+            images.append(self.load_file(image_dict[element]))
 
         if self.transform:
-            image = self.transform(image)
-        #     image_2 = self.transform(image_2)
-        #     image_3 = self.transform(image_3)
+            for i in range(len(images)):
+                images[i] = self.transform(images[i])
 
-        # train_tensor = torch.stack([image, image_2, image_3])[:, 0, :, :]
+        train_tensor = torch.stack(images)[:, 0, :, :]
 
-        return image, label, label_name
+        return train_tensor, label, label_name
 
     def load_file(self, file):
         this_image = Image.open(file)
