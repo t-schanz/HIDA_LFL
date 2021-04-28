@@ -19,7 +19,7 @@ class LightningModel(pl.LightningModule):
         self.class_labels = class_labels
         self.model = self.define_model(input_channels=3)
         self.learning_rate = kwargs["learning_rate"]
-        self.loss_func = nn.BCELoss()
+        self.loss_func = nn.BCEWithLogitsLoss()
         self.accuracy_func = pl_metrics.Accuracy()
         self.save_hyperparameters()
 
@@ -35,7 +35,7 @@ class LightningModel(pl.LightningModule):
 
     def forward(self, images,  *args, **kwargs):
         predictions = self.model(images)
-        return F.log_softmax(predictions, dim=1)
+        return predictions
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.hparams.learning_rate)
@@ -55,7 +55,7 @@ class LightningModel(pl.LightningModule):
 
         # lets log some values for inspection (for example in tensorboard):
         self.log("NLL Training", loss)
-        self.log("Accuracy Training", accuracy)
+        self.log("Accuracy Training", accuracy, prog_bar=True)
 
         return loss
 

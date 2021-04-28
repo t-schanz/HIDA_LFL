@@ -46,7 +46,7 @@ class DataSet(Dataset):
 
 
 class HidaDataLoader(pl.LightningDataModule):
-    def __init__(self, batch_size, data_path, transform=None, **kwargs):
+    def __init__(self, batch_size, data_path, num_workers, transform=None, **kwargs):
         super().__init__()
 
         self.transform = transform
@@ -60,7 +60,7 @@ class HidaDataLoader(pl.LightningDataModule):
         self.integer_class_labels = dict()
 
         self.batch_size = batch_size
-        self.num_workers = 0
+        self.num_workers = num_workers
         self.train_split = 0.9
         self.validation_split = 0.1
         self.shuffle_train_dataset = True

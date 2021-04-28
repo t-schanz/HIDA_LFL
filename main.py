@@ -22,6 +22,7 @@ def load_config():
                         help="The path where to store the checkpoints.")
     parser.add_argument('--data_path', type=str, default="data/", help="The path where the data is stored at.")
     parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--num_workers', type=int, default=0)
     parser.add_argument('--learning_rate', type=float, default=0.002)
 
     parser = pl.Trainer.add_argparse_args(parser)
@@ -45,6 +46,8 @@ def main():
         torch.autograd.set_detect_anomaly(True)
 
     transform = transforms.Compose([
+        transforms.RandomRotation(degrees=15),
+        transforms.RandomCrop(size=[900, 900]),
         transforms.ToTensor()
     ])
 
