@@ -50,10 +50,10 @@ def main():
     data_module.setup()
 
     # if the model is trained on GPU add a GPU logger to see GPU utilization in comet-ml logs:
-    if args.gpus == 0:
-        callbacks = None
-    else:
+    if args.gpus:
         callbacks = [pl.callbacks.GPUStatsMonitor()]
+    else:
+        callbacks = None
 
     # logging to tensorboard:
     test_tube_logger = pl_loggers.TestTubeLogger(save_dir=args.tensorboard_logger_logdir,

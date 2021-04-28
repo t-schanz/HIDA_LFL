@@ -24,7 +24,7 @@ class LightningModel(pl.LightningModule):
         self.save_hyperparameters()
 
     def define_model(self):
-        return resnet18(pretrained=False, num_classes=2)
+        return resnet18(pretrained=False, num_classes=1)
 
     def forward(self, images,  *args, **kwargs):
         predictions = self.model(images)
@@ -43,7 +43,7 @@ class LightningModel(pl.LightningModule):
         logging.debug(f"predictions have the shape: {predictions.shape}")
 
 
-        loss = self.loss_func(predictions, labels)
+        loss = self.loss_func(predictions, labels.unsqueeze(-1).float())
         accuracy = self.accuracy_func(F.softmax(predictions, dim=1).detach().cpu(), labels.to(torch.int).detach().cpu())
 
         # lets log some values for inspection (for example in tensorboard):
@@ -58,16 +58,12 @@ class LightningModel(pl.LightningModule):
         # for the toy example we will not use the meta_data and only the images to make a prediction.
         predictions = self(images)
 
-        loss = self.loss_func(predictions, labels)
+        loss = self.loss_func(predictions, labels.unsqueeze(-1).float())
         accuracy = self.accuracy_func(F.softmax(predictions, dim=1).detach().cpu(), labels.to(torch.int).detach().cpu())
 
         # lets log some values for inspection (for example in tensorboard):
         self.log("NLL Validation", loss)
         self.log("Accuracy Validation", accuracy)
-
-        if batch_idx == 0:
-            self.log_confusion_matrix(predictions, labels)
-            self.log_images(images, label_names)
 
         return loss
 
@@ -77,7 +73,7 @@ class LightningModel(pl.LightningModule):
         # for the toy example we will not use the meta_data and only the images to make a prediction.
         predictions = self(images)
 
-        loss = self.loss_func(predictions, labels)
+        loss = self.loss_func(predictions, labels.unsqueeze(-1).float())
         accuracy = self.accuracy_func(F.softmax(predictions, dim=1).detach().cpu(), labels.to(torch.int).detach().cpu())
 
         # lets log some values for inspection (for example in tensorboard):
