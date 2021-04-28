@@ -1,0 +1,24 @@
+name: plankton
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.8
+  - jupyterlab
+  - ipython
+  - ipywidgets
+  - numpy
+  - pytorch
+  - cudatoolkit=11.1
+  - pytorch-lightning
+  - torchvision
+  - catboost
+  - scikit-learn
+  - pillow
+  - tqdm
+  - matplotlib
+  - pip
+  - torchvision
+  - pip:
+      - test-tube
+      - fairscale
