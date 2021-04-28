@@ -22,3 +22,4 @@ dependencies:
   - pip:
       - test-tube
       - fairscale
+      - onnxruntime
