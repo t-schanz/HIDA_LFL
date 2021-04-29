@@ -53,6 +53,10 @@ def main():
 
     data_module = HidaDataLoader.from_argparse_args(args, transform=transform, **args.__dict__)
     data_module.setup()
+    
+    for batch in data_module.train_dataloader():
+        x, y, _ = batch
+        break
 
     # if the model is trained on GPU add a GPU logger to see GPU utilization in comet-ml logs:
     if args.gpus:
@@ -74,7 +78,7 @@ def main():
                                           dirpath=os.path.join(args.checkpoint_file_path, args.experiment_name),
                                           )
 
-    model = VisionTransformerModel(class_labels=data_module.unique_labels, **args.__dict__)
+    model = VisionTransformerModel(class_labels=data_module.unique_labels, example_input_array=x, **args.__dict__)
 
     
     

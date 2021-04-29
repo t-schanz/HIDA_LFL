@@ -13,9 +13,11 @@ import pytorch_lightning.metrics as pl_metrics
 from transformers import ViTModel, ViTConfig
 from transformers import ViTFeatureExtractor, ViTForImageClassification
 
+import os
+
 class VisionTransformerModel(pl.LightningModule):
 
-    def __init__(self, class_labels, *args, **kwargs):
+    def __init__(self, class_labels, example_input_array, *args, **kwargs):
 
         super().__init__()
         self.class_labels = class_labels
@@ -25,6 +27,7 @@ class VisionTransformerModel(pl.LightningModule):
         self.loss_func = nn.CrossEntropyLoss()
         self.accuracy_func = pl_metrics.Accuracy()
         self.save_hyperparameters()
+        self.example_input_array = example_input_array
 
     def define_feature_extractor(self):
         feature_extractor = ViTFeatureExtractor(do_resize=False, do_normalize=False)
@@ -37,8 +40,11 @@ class VisionTransformerModel(pl.LightningModule):
         #model = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224')
         return model
 
-    def forward(self, images, labels, *args, **kwargs):
-        predictions = self.model(images, labels=labels).logits
+    def forward(self, images, *args, **kwargs):
+        
+        features = self.feature_extractor(images, return_tensors="np")
+        predictions = self.model(features["pixel_values"][0]).logits
+        
         return predictions
 
     def configure_optimizers(self):
@@ -48,8 +54,8 @@ class VisionTransformerModel(pl.LightningModule):
     def training_step(self, batch, batch_idx, *args, **kwargs):
         images, labels, label_names = batch
 
-        features = self.feature_extractor(images, return_tensors="np")
-        predictions = self.model(features["pixel_values"][0]).logits
+        predictions = self(images)
+
         logging.debug(f"labels have the shape: {labels.shape}")
         logging.debug(f"predictions have the shape: {predictions.shape}")
     
@@ -65,8 +71,7 @@ class VisionTransformerModel(pl.LightningModule):
     def validation_step(self, batch, batch_idx, *args, **kwargs):
         images, labels, label_names = batch
         
-        features = self.feature_extractor(images=images, return_tensors="np")
-        predictions = self.model(features["pixel_values"][0]).logits
+        predictions = self(images)
                                 
         loss = self.loss_func(predictions, labels)
         accuracy = self.accuracy_func(F.softmax(predictions, dim=1).argmax(-1), labels)
@@ -91,6 +96,22 @@ class VisionTransformerModel(pl.LightningModule):
         self.log("Accuracy Test", accuracy)
 
         return loss
+    
+    def on_save_checkpoint(self, checkpoint) -> None:
+        # save model to onnx:
+        folder = self.trainer.checkpoint_callback.dirpath
+        onnx_file_generator = os.path.join(folder, f"model_{self.global_step}.onnx")
+        torch.onnx.export(model=self.model,
+                      args=self.example_input_array.to(self.device),
+                      f=onnx_file_generator,
+                      opset_version=12,
+                      verbose=False,
+                      export_params=True,
+                      input_names=['input'],
+                      output_names=['output'],
+                      dynamic_axes={'input': {0: 'batch_size'},  # makes the batch-size variable for inference
+                                    'output': {0: 'batch_size'}}
+                      )
 
     def log_confusion_matrix(self, predictions, targets):
         conf_mat = confusion_matrix(torch.argmax(predictions, dim=-1).detach().cpu(), targets.detach().cpu(),
