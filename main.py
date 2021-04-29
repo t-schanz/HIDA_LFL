@@ -10,6 +10,7 @@ from torchvision import transforms
 
 from src.models.LightningBaseModel import LightningModel
 from src.utils.DataLoader import HidaDataLoader
+from datetime import datetime as dt
 
 
 def load_config():
@@ -17,7 +18,7 @@ def load_config():
     parser.add_argument('--seed', type=int, default=42, help="The random seed for the experiment.")
     parser.add_argument('--tensorboard_logger_logdir', type=str, default="logs/tb_logs",
                         help="The path where to log the data.")
-    parser.add_argument('--experiment_name', type=str, default="HIDA", help="The name of the experiment.")
+    parser.add_argument('--experiment_name', type=str, default=f"HIDA_"+dt.now().strftime("%H%M%S"), help="The name of the experiment.")
     parser.add_argument('--checkpoint_file_path', type=str, default="logs/checkpoints",
                         help="The path where to store the checkpoints.")
     parser.add_argument('--data_path', type=str, default="data/", help="The path where the data is stored at.")
@@ -46,13 +47,17 @@ def main():
         torch.autograd.set_detect_anomaly(True)
 
     transform = transforms.Compose([
-        transforms.RandomRotation(degrees=15),
         transforms.RandomCrop(size=[900, 900]),
+        transforms.RandomRotation(degrees=15),
         transforms.ToTensor()
     ])
 
     data_module = HidaDataLoader.from_argparse_args(args, transform=transform, **args.__dict__)
     data_module.setup()
+    for batch in data_module.train_dataloader():
+        X, y, _ = batch
+        break
+
 
     # if the model is trained on GPU add a GPU logger to see GPU utilization in comet-ml logs:
     if args.gpus:
@@ -74,7 +79,7 @@ def main():
                                           dirpath=os.path.join(args.checkpoint_file_path, args.experiment_name),
                                           )
 
-    model = LightningModel(class_labels=data_module.unique_labels, **args.__dict__)
+    model = LightningModel(class_labels=data_module.unique_labels, example_input_array=X, **args.__dict__)
 
     trainer = pl.Trainer.from_argparse_args(args,
                                             callbacks=callbacks,
