@@ -22,12 +22,18 @@ class DataSet(Dataset):
         elif label_name == "SEVERE":
             label = 1
         else:
-            raise KeyError
+            label = -1
+
+        # image_subsets = ["image", "ClusterShade", "DA", "DE", "Energy", "Entropy", "ID", "Kurtosis", "Mean", "Variance"]
 
         image_subsets = ["image", "ClusterShade", "DA"]
         images = []
         for element in image_subsets:
             images.append(self.load_file(image_dict[element]))
+        
+#         images = []
+#         for key, _ in image_dict.items():
+#             images.append(self.load_file(image_dict[key]))
 
         if self.transform:
             for i in range(len(images)):
@@ -35,7 +41,9 @@ class DataSet(Dataset):
 
         train_tensor = torch.stack(images)[:, 0, :, :]
 
-        return train_tensor, label, label_name
+        image_name = os.path.split(image_dict[element])[-1]
+
+        return train_tensor, label, (label_name, image_name)
 
     def load_file(self, file):
         this_image = Image.open(file)
@@ -77,16 +85,14 @@ class HidaDataLoader(pl.LightningDataModule):
             raise FileNotFoundError(f"Did not find any files")
 
         train_split = self.train_split
-        valid_split = train_split + self.validation_split
         length = len(training_pairs)
 
         train_split_start = 0
         train_split_end = int(length * train_split)
         valid_split_start = train_split_end
-        valid_split_end = length
 
         train_subset = training_pairs[train_split_start: train_split_end]
-        valid_subset = training_pairs[valid_split_start: valid_split_end]
+        valid_subset = training_pairs[valid_split_start: length]
         test_subset = testing_images
 
         if stage == 'fit' or stage is None:
@@ -127,15 +133,15 @@ class HidaDataLoader(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(self.train_data, batch_size=self.batch_size, num_workers=self.num_workers,
-                          shuffle=self.shuffle_train_dataset, pin_memory=True)
+                          shuffle=self.shuffle_train_dataset, pin_memory=False)
 
     def val_dataloader(self):
         return DataLoader(self.valid_data, batch_size=self.batch_size, num_workers=self.num_workers,
-                          shuffle=self.shuffle_validation_dataset, pin_memory=True)
+                          shuffle=self.shuffle_validation_dataset, pin_memory=False)
 
     def test_dataloader(self):
         return DataLoader(self.test_data, batch_size=self.batch_size, num_workers=self.num_workers,
-                          shuffle=self.shuffle_test_dataset, pin_memory=True)
+                          shuffle=self.shuffle_test_dataset, pin_memory=False)
 
     def set_up_integer_class_labels(self):
         integer_class_labels = dict()
