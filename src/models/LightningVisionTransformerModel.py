@@ -19,27 +19,26 @@ class VisionTransformerModel(pl.LightningModule):
 
         super().__init__()
         self.class_labels = class_labels
+        self.feature_extractor = self.define_feature_extractor()
         self.model = self.define_model(input_channels=3)
         self.learning_rate = kwargs["learning_rate"]
-        self.loss_func = nn.BCEWithLogitsLoss()
+        self.loss_func = nn.CrossEntropyLoss()
         self.accuracy_func = pl_metrics.Accuracy()
         self.save_hyperparameters()
 
+    def define_feature_extractor(self):
+        feature_extractor = ViTFeatureExtractor(do_resize=False, do_normalize=False)
+        #feature_extractor = ViTFeatureExtractor.from_pretrained('google/vit-base-patch16-224')
+        return feature_extractor
+    
     def define_model(self, input_channels=1):
-
         configuration = ViTConfig(num_channels=input_channels, image_size=900)
-        
-        feature_extractor = ViTFeatureExtractor.from_pretrained('google/vit-base-patch16-224')
-        feature_extractor.conv1 = nn.Conv2d(input_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        classifier = nn.Linear(1000, 1)
-        
-        model = ViTForImageClassification(configuration) #.from_pretrained('google/vit-base-patch16-224')
-        #model = nn.Sequential(feature_extractor, classifier)
-        
+        model = ViTForImageClassification(configuration)
+        #model = ViTForImageClassification.from_pretrained('google/vit-base-patch16-224')
         return model
 
-    def forward(self, images,  *args, **kwargs):
-        predictions = self.model(images).logits
+    def forward(self, images, labels, *args, **kwargs):
+        predictions = self.model(images, labels=labels).logits
         return predictions
 
     def configure_optimizers(self):
@@ -49,15 +48,13 @@ class VisionTransformerModel(pl.LightningModule):
     def training_step(self, batch, batch_idx, *args, **kwargs):
         images, labels, label_names = batch
 
-        # for the toy example we will not use the meta_data and only the images to make a prediction.
-        predictions = self.model(images).logits
+        features = self.feature_extractor(images, return_tensors="np")
+        predictions = self.model(features["pixel_values"][0]).logits
         logging.debug(f"labels have the shape: {labels.shape}")
         logging.debug(f"predictions have the shape: {predictions.shape}")
-
-        predictions = predictions.argmax(-1)
-        
-        loss = self.loss_func(predictions.float(), labels.float())
-        accuracy = self.accuracy_func(predictions, labels)
+    
+        loss = self.loss_func(predictions, labels)
+        accuracy = self.accuracy_func(F.softmax(predictions, dim=1).argmax(-1), labels)
 
         # lets log some values for inspection (for example in tensorboard):
         self.log("NLL Training", loss)
@@ -67,14 +64,12 @@ class VisionTransformerModel(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx, *args, **kwargs):
         images, labels, label_names = batch
-
-        # for the toy example we will not use the meta_data and only the images to make a prediction.
-        predictions = self.model(images).logits
         
-        predictions = predictions.argmax(-1)
-                
-        loss = self.loss_func(predictions.float(), labels.float())
-        accuracy = self.accuracy_func(F.sigmoid(predictions, dim=1), labels)
+        features = self.feature_extractor(images=images, return_tensors="np")
+        predictions = self.model(features["pixel_values"][0]).logits
+                                
+        loss = self.loss_func(predictions, labels)
+        accuracy = self.accuracy_func(F.softmax(predictions, dim=1).argmax(-1), labels)
 
         # lets log some values for inspection (for example in tensorboard):
         self.log("NLL Validation", loss)
@@ -89,7 +84,7 @@ class VisionTransformerModel(pl.LightningModule):
         predictions = self(images)
 
         loss = self.loss_func(predictions.float(), labels.float())
-        accuracy = self.accuracy_func(F.softmax(predictions, dim=1).detach().cpu(), labels.to(torch.int).detach().cpu())
+        accuracy = self.accuracy_func(F.softmax(predictions, dim=1), labels)
 
         # lets log some values for inspection (for example in tensorboard):
         self.log("NLL Test", loss)
