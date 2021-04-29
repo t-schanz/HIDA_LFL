@@ -22,7 +22,7 @@ class DataSet(Dataset):
         elif label_name == "SEVERE":
             label = 1
         else:
-            raise KeyError
+            label = -1
 
         # image_subsets = ["image", "ClusterShade", "DA", "DE", "Energy", "Entropy", "ID", "Kurtosis", "Mean", "Variance"]
 
